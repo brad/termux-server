@@ -31,7 +31,7 @@ For the best experience, please install the following from [F-Droid](https://f-d
 Open Termux and copy/paste the following command:
 
 ```bash
-curl -sL https://raw.githubusercontent.com/brad/termux-server/main/setup.sh | bash
+curl -sL https://raw.githubusercontent.com/brad/termux-server/termux-service-setup-16714057685171292445/setup.sh | bash
 ```
 
 
