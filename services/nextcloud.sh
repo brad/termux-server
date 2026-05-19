@@ -1,5 +1,6 @@
 #!/bin/bash
 # Nextcloud Setup for Termux
+# Copyright (c) 2026 Brad
 # Adapted from BenjaminWegener/nextcloud_on_android
 
 echo -e "${YELLOW}Setting up Nextcloud...${NC}"
@@ -15,13 +16,13 @@ if [ ! -d "$HOME/nextcloud" ]; then
     URL="https://download.nextcloud.com/server/releases/$FILE"
 
     echo "Downloading Nextcloud $VERSION..."
-    wget -O "$FILE" "$URL"
+    wget --https-only -O "$FILE" "$URL"
 
     echo "Verifying SHA512 checksum..."
     echo "$EXPECTED_SHA  $FILE" | sha512sum -c - || {
         echo -e "${RED}Error: SHA512 checksum verification failed!${NC}"
         rm "$FILE"
-        exit 1
+        return 1 2>/dev/null || exit 1
     }
 
     echo "Extracting Nextcloud..."
@@ -31,13 +32,15 @@ if [ ! -d "$HOME/nextcloud" ]; then
     # Basic config initialization
     if [ -f "$HOME/nextcloud/config/config.sample.php" ]; then
         cp "$HOME/nextcloud/config/config.sample.php" "$HOME/nextcloud/config/config.php"
+        # Allow any host for private network access
         sed -i "s/localhost:8080/*/g" "$HOME/nextcloud/config/config.php"
     fi
 fi
 
 # Configure lighttpd
-cat << EOF > ~/lighttpd.conf
+cat << LIGHTEOF > ~/lighttpd.conf
 server.port             = 8080
+server.bind             = "0.0.0.0"
 server.document-root    = "$HOME/nextcloud"
 server.upload-dirs      = ( "$PREFIX/tmp" )
 index-file.names        = ( "index.php", "index.html" )
@@ -64,15 +67,15 @@ fastcgi.server = ( ".php" => ((
                      "bin-path" => "$PREFIX/bin/php-cgi",
                      "socket" => "$PREFIX/tmp/php.socket"
                  )))
-EOF
+LIGHTEOF
 
 # Enable boot
 mkdir -p ~/.termux/boot
-cat << EOF > ~/.termux/boot/start-nextcloud
+cat << BOOTEOF > ~/.termux/boot/start-nextcloud
 #!/bin/bash
 termux-wake-lock
 lighttpd -f ~/lighttpd.conf
-EOF
+BOOTEOF
 chmod +x ~/.termux/boot/start-nextcloud
 
 # Shortcut to stop
@@ -89,4 +92,4 @@ if ! pgrep -x lighttpd >/dev/null; then
     lighttpd -f ~/lighttpd.conf
 fi
 
-log_summary "${GREEN}Nextcloud setup complete. Web UI at http://127.0.0.1:8080${NC}"
+log_summary "${GREEN}Nextcloud setup complete. Web UI at http://[DEVICE_IP]:8080${NC}"

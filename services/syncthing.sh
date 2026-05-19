@@ -1,5 +1,6 @@
 #!/bin/bash
 # Syncthing Setup for Termux
+# Copyright (c) 2026 Brad
 
 echo -e "${YELLOW}Setting up Syncthing...${NC}"
 if ! command -v syncthing &> /dev/null; then
@@ -8,10 +9,10 @@ fi
 
 # Enable boot
 mkdir -p ~/.termux/boot
-cat << 'EOF' > ~/.termux/boot/start-syncthing
+cat << BOOTEOF > ~/.termux/boot/start-syncthing
 #!/bin/bash
-syncthing --no-browser > /dev/null 2>&1 &
-EOF
+syncthing --no-browser --gui-address=127.0.0.1:8384 > /dev/null 2>&1 &
+BOOTEOF
 chmod +x ~/.termux/boot/start-syncthing
 
 # Shortcut to stop
@@ -25,7 +26,7 @@ chmod +x ~/.shortcuts/open-syncthing
 
 # Start now
 if ! pgrep -x syncthing >/dev/null; then
-    syncthing --no-browser > /dev/null 2>&1 &
+    syncthing --no-browser --gui-address=127.0.0.1:8384 > /dev/null 2>&1 &
 fi
 
-log_summary "${GREEN}Syncthing setup complete. Web UI at http://127.0.0.1:8384${NC}"
+log_summary "${GREEN}Syncthing setup complete. Web UI at http://127.0.0.1:8384 (Local only)${NC}"

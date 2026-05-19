@@ -2,6 +2,7 @@
 
 # Termux Service Setup Script
 # Secure, Idempotent, and Easy to use.
+# Copyright (c) 2026 Brad
 
 # Exit on error
 set -e
@@ -15,7 +16,10 @@ pkg update -y
 pkg install curl -y
 
 # Fetch and source utilities
-curl -sL "$BASE_URL/utils.sh" -o "/tmp/utils.sh"
+curl -sL --fail "$BASE_URL/utils.sh" -o "/tmp/utils.sh" || {
+    echo "Error: Could not download utils.sh. Check your internet connection or the BRANCH variable."
+    exit 1
+}
 source "/tmp/utils.sh"
 
 # Initialize summary log
@@ -66,7 +70,7 @@ for choice in $CHOICES; do
     c=$(echo "$choice" | tr -d '"' | tr '[:upper:]' '[:lower:]')
     echo -e "${YELLOW}Downloading and running setup for $c...${NC}"
 
-    if curl -sL "$BASE_URL/$c.sh" -o "/tmp/$c.sh"; then
+    if curl -sL --fail "$BASE_URL/$c.sh" -o "/tmp/$c.sh"; then
         # We source the script so it can use the variables and functions from utils.sh
         source "/tmp/$c.sh"
         rm "/tmp/$c.sh"
@@ -79,6 +83,12 @@ done
 echo -e "\n${GREEN}====================================================${NC}"
 echo -e "${GREEN}Setup Summary:${NC}"
 cat "$SUMMARY_LOG"
+
+echo -e "\n${YELLOW}Security Note:${NC}"
+echo -e "Some services (Navidrome, Nextcloud, Mosquitto) are listening on 0.0.0.0"
+echo -e "to be accessible on your home network. Ensure your router's firewall"
+echo -e "is active and you haven't enabled DMZ for this device."
+
 echo -e "${GREEN}====================================================${NC}"
 echo -e "1. Install 'Termux:Boot' from F-Droid to start services on boot."
 echo -e "2. Install 'Termux:Widget' from F-Droid for shortcuts."
