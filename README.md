@@ -9,6 +9,7 @@ A quick and easy way to set up common services on your Termux device with securi
 - **One-Click Controls**: Adds home screen shortcuts to stop services and open Web UIs (requires Termux:Widget).
 - **Secure & Idempotent**: Skips already configured services and ensures basic security.
 - **Storage Integration**: Connects Termux to your Android shared storage.
+- **Modular Design**: Services are separated into independent setup scripts.
 
 ## Services Supported
 
@@ -17,6 +18,7 @@ A quick and easy way to set up common services on your Termux device with securi
 - **Transmission**: Lightweight BitTorrent client with Web UI.
 - **Mosquitto**: MQTT broker for IoT and automation.
 - **Navidrome**: Modern Subsonic-compatible personal music streamer.
+- **Nextcloud**: Self-hosted productivity platform (File sync, etc.).
 
 ## Prerequisites
 
@@ -33,8 +35,6 @@ Open Termux and copy/paste the following command:
 ```bash
 curl -sL https://raw.githubusercontent.com/brad/termux-server/termux-service-setup-16714057685171292445/setup.sh | bash
 ```
-
-
 
 ## Post-Installation
 
@@ -53,4 +53,7 @@ If shortcuts to open Web UIs (e.g., Syncthing) don't work, ensure Termux has the
 
 ## Security
 - **SSH**: After installation, run `passwd` in Termux to set a secure password for SSH access.
-- **Web UIs**: It is highly recommended to set up usernames and passwords within the Web UIs of Syncthing and Transmission once they are running.
+- **Web UIs**: It is highly recommended to set up usernames and passwords within the Web UIs (Syncthing, Transmission, Nextcloud) once they are running.
+
+## License
+This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
