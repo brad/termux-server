@@ -27,7 +27,7 @@ if ! command -v navidrome &> /dev/null && [ ! -f ~/bin/navidrome ]; then
     grep "$FILE" "navidrome_checksums.txt" | sha256sum -c - || {
         echo -e "${RED}Error: SHA256 checksum verification failed!${NC}"
         rm "$FILE" "navidrome_checksums.txt"
-        return 1
+        return 1 2>/dev/null || exit 1
     }
 
     tar -xz -f "$FILE" -C ~/bin navidrome

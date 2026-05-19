@@ -19,7 +19,6 @@ pkg install curl -y
 curl -sL --fail "$BASE_URL/utils.sh" -o "/tmp/utils.sh" || {
     echo "Error: Could not download utils.sh. Check your internet connection or the BRANCH variable."
     exit 1
-    exit 1
 }
 source "/tmp/utils.sh"
 

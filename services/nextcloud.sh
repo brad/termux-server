@@ -22,7 +22,7 @@ if [ ! -d "$HOME/nextcloud" ]; then
     echo "$EXPECTED_SHA  $FILE" | sha512sum -c - || {
         echo -e "${RED}Error: SHA512 checksum verification failed!${NC}"
         rm "$FILE"
-        return 1
+        return 1 2>/dev/null || exit 1
     }
 
     echo "Extracting Nextcloud..."
