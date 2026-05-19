@@ -2,6 +2,9 @@
 
 # Shared utilities for Termux Service Setup
 
+# Exit on error for all sourced scripts
+set -e
+
 # Colors
 export GREEN='\033[0;32m'
 export YELLOW='\033[1;33m'

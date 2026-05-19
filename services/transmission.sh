@@ -1,5 +1,6 @@
 #!/bin/bash
 # Transmission Setup for Termux
+# Copyright (c) 2026 Brad
 
 echo -e "${YELLOW}Setting up Transmission...${NC}"
 if ! command -v transmission-daemon &> /dev/null; then
@@ -8,10 +9,10 @@ fi
 
 # Enable boot
 mkdir -p ~/.termux/boot
-cat << 'EOF' > ~/.termux/boot/start-transmission
+cat << BOOTEOF > ~/.termux/boot/start-transmission
 #!/bin/bash
-transmission-daemon
-EOF
+transmission-daemon --allowed 127.0.0.1 --bind-address-ipv4 127.0.0.1
+BOOTEOF
 chmod +x ~/.termux/boot/start-transmission
 
 # Shortcut to stop
@@ -25,7 +26,7 @@ chmod +x ~/.shortcuts/open-transmission
 
 # Start now
 if ! pgrep -x transmission-da >/dev/null; then
-    transmission-daemon
+    transmission-daemon --allowed 127.0.0.1 --bind-address-ipv4 127.0.0.1
 fi
 
-log_summary "${GREEN}Transmission setup complete. Web UI at http://127.0.0.1:9091${NC}"
+log_summary "${GREEN}Transmission setup complete. Web UI at http://127.0.0.1:9091 (Local only)${NC}"

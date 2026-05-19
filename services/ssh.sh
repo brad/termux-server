@@ -1,5 +1,6 @@
 #!/bin/bash
 # SSH Setup for Termux
+# Copyright (c) 2026 Brad
 
 echo -e "${YELLOW}Setting up SSH...${NC}"
 if ! command -v sshd &> /dev/null; then
@@ -8,10 +9,10 @@ fi
 
 # Enable boot via Termux:Boot
 mkdir -p ~/.termux/boot
-cat << 'EOF' > ~/.termux/boot/start-ssh
+cat << BOOTEOF > ~/.termux/boot/start-ssh
 #!/bin/bash
 sshd
-EOF
+BOOTEOF
 chmod +x ~/.termux/boot/start-ssh
 
 # Shortcut to stop via Termux:Widget
@@ -24,4 +25,6 @@ if ! pgrep -x sshd >/dev/null; then
     sshd
 fi
 
-log_summary "${GREEN}SSH setup complete. Run 'passwd' to set a password.${NC}"
+log_summary "${GREEN}SSH setup complete.${NC}"
+log_summary "${YELLOW}  - Run 'passwd' to set a password if you haven't already.${NC}"
+log_summary "${YELLOW}  - For better security, use SSH keys: copy your public key to ~/.ssh/authorized_keys${NC}"

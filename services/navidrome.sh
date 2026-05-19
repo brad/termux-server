@@ -1,5 +1,6 @@
 #!/bin/bash
 # Navidrome Setup for Termux
+# Copyright (c) 2026 Brad
 
 echo -e "${YELLOW}Setting up Navidrome...${NC}"
 if ! command -v navidrome &> /dev/null && [ ! -f ~/bin/navidrome ]; then
@@ -14,15 +15,24 @@ if ! command -v navidrome &> /dev/null && [ ! -f ~/bin/navidrome ]; then
     fi
 
     VERSION="0.51.1"
-    URL="https://github.com/navidrome/navidrome/releases/download/v${VERSION}/navidrome_${VERSION}_Linux_${NAV_ARCH}.tar.gz"
+    FILE="navidrome_${VERSION}_Linux_${NAV_ARCH}.tar.gz"
+    URL="https://github.com/navidrome/navidrome/releases/download/v${VERSION}/$FILE"
+    CHECKSUM_URL="https://github.com/navidrome/navidrome/releases/download/v${VERSION}/navidrome_checksums.txt"
 
     echo "Downloading Navidrome v${VERSION}..."
-    if curl -L "$URL" | tar -xz -C ~/bin navidrome; then
-        echo "Navidrome installed to ~/bin/navidrome"
-    else
-        echo "Failed to download Navidrome. Please check your internet connection or ARCH ($ARCH)."
-        return
-    fi
+    curl -L --fail "$URL" -o "$FILE"
+
+    echo "Verifying checksum..."
+    curl -sL --fail "$CHECKSUM_URL" -o "navidrome_checksums.txt"
+    grep "$FILE" "navidrome_checksums.txt" | sha256sum -c - || {
+        echo -e "${RED}Error: SHA256 checksum verification failed!${NC}"
+        rm "$FILE" "navidrome_checksums.txt"
+        return 1
+    }
+
+    tar -xz -f "$FILE" -C ~/bin navidrome
+    rm "$FILE" "navidrome_checksums.txt"
+    echo "Navidrome installed to ~/bin/navidrome"
 fi
 
 # Add ~/bin to path if not already there (for the current session)
@@ -30,11 +40,11 @@ export PATH="$HOME/bin:$PATH"
 
 # Enable boot
 mkdir -p ~/.termux/boot
-cat << 'EOF' > ~/.termux/boot/start-navidrome
+cat << BOOTEOF > ~/.termux/boot/start-navidrome
 #!/bin/bash
-export PATH="$HOME/bin:$PATH"
-cd ~ && navidrome > /dev/null 2>&1 &
-EOF
+export PATH="\$HOME/bin:\$PATH"
+cd ~ && navidrome --addr 0.0.0.0 > /dev/null 2>&1 &
+BOOTEOF
 chmod +x ~/.termux/boot/start-navidrome
 
 # Shortcut to stop
@@ -48,7 +58,7 @@ chmod +x ~/.shortcuts/open-navidrome
 
 # Start now
 if ! pgrep -x navidrome >/dev/null; then
-    ~/bin/navidrome > /dev/null 2>&1 &
+    ~/bin/navidrome --addr 0.0.0.0 > /dev/null 2>&1 &
 fi
 
-log_summary "${GREEN}Navidrome setup complete. Web UI at http://127.0.0.1:4533${NC}"
+log_summary "${GREEN}Navidrome setup complete. Web UI at http://[DEVICE_IP]:4533${NC}"
