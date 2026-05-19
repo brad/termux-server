@@ -17,20 +17,32 @@ echo -e "${GREEN}Starting Termux Service Setup...${NC}"
 # This will trigger an Android permission dialog
 echo -e "${YELLOW}Setting up storage access...${NC}"
 if [ ! -d "$HOME/storage" ]; then
-    termux-setup-storage
+    # We use || true because termux-setup-storage might return non-zero if already running/denied
+    termux-setup-storage || true
     echo "Please grant storage permission in the Android popup if it appears."
     sleep 2
 fi
 
 # 2. Update packages
-echo -e "${YELLOW}Updating packages...${NC}"
-pkg update -y && pkg upgrade -y
+# We use DEBIAN_FRONTEND=noninteractive to prevent the script from hanging on config file prompts
+# which is likely why it "exited" or "stopped" for the user.
+echo -e "${YELLOW}Updating packages (this may take a minute)...${NC}"
+export DEBIAN_FRONTEND=noninteractive
+pkg update -y
+# Using force-confold to keep existing configs and avoid prompts during upgrade
+pkg upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-confold"
 
 # 3. Install whiptail and other basics if not present
+echo -e "${YELLOW}Installing dependencies...${NC}"
 pkg install whiptail coreutils procps curl -y
 
 # 4. Service selection
-# We use 3>&1 1>&2 2>&3 to redirect stdout/stderr for whiptail to capture the result
+# Ensure whiptail is available
+if ! command -v whiptail &> /dev/null; then
+    echo "Error: whiptail could not be installed. Please run 'pkg install whiptail' manually."
+    exit 1
+fi
+
 CHOICES=$(whiptail --title "Termux Service Setup" --checklist \
 "Select services to install and enable (Space to select, Enter to confirm):" 20 70 10 \
 "SSH" "OpenSSH Server" ON \
