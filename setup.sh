@@ -41,17 +41,27 @@ if [ -f "./services/utils.sh" ]; then
     USE_LOCAL=true
     SERVICES_DIR="./services"
 fi
+# Determine temporary directory
+if [ -n "$TMPDIR" ]; then
+    WORKDIR="$TMPDIR"
+elif [ -d "/tmp" ] && [ -w "/tmp" ]; then
+    WORKDIR="/tmp"
+else
+    WORKDIR="$HOME/.termux/tmp"
+    mkdir -p "$WORKDIR"
+fi
+
 
 # Fetch and source utilities
 if [ "$USE_LOCAL" = true ]; then
     source "$SERVICES_DIR/utils.sh"
 else
     echo -e "${YELLOW}Downloading utilities...${NC}"
-    curl -sL --fail --retry 3 --connect-timeout 10 "$BASE_URL/utils.sh" -o "/tmp/utils.sh" || {
-        echo -e "${RED}Error: Could not download utils.sh. Check your internet connection or the BRANCH variable.${NC}"
+    curl -sL --fail --retry 3 --connect-timeout 10 "$BASE_URL/utils.sh" -o "$WORKDIR/utils.sh" || {
+        echo -e "${RED}Error: Could not download utils.sh to $WORKDIR/utils.sh. Check your internet connection, the BRANCH variable, or directory permissions.${NC}"
         exit 1
     }
-    source "/tmp/utils.sh"
+    source "$WORKDIR/utils.sh"
 fi
 
 # Initialize summary log
@@ -106,10 +116,10 @@ for choice in $CHOICES; do
         source "$SERVICES_DIR/$c.sh"
     else
         echo -e "${YELLOW}Downloading and running setup for $c...${NC}"
-        if curl -sL --fail --retry 3 --connect-timeout 10 "$BASE_URL/$c.sh" -o "/tmp/$c.sh"; then
+        if curl -sL --fail --retry 3 --connect-timeout 10 "$BASE_URL/$c.sh" -o "$WORKDIR/$c.sh"; then
             # We source the script so it can use the variables and functions from utils.sh
-            source "/tmp/$c.sh"
-            rm "/tmp/$c.sh"
+            source "$WORKDIR/$c.sh"
+            rm "$WORKDIR/$c.sh"
         else
             echo -e "${RED}Error: Could not download setup script for $c${NC}"
         fi
@@ -134,6 +144,6 @@ echo -e "${GREEN}====================================================${NC}"
 
 # Cleanup
 if [ "$USE_LOCAL" = false ]; then
-    rm -f "/tmp/utils.sh"
+    rm -f "$WORKDIR/utils.sh"
 fi
 rm -f "$SUMMARY_LOG"
