@@ -20,10 +20,10 @@ if ! command -v navidrome &> /dev/null && [ ! -f ~/bin/navidrome ]; then
     CHECKSUM_URL="https://github.com/navidrome/navidrome/releases/download/v${VERSION}/navidrome_checksums.txt"
 
     echo "Downloading Navidrome v${VERSION}..."
-    curl -L --fail "$URL" -o "$FILE"
+    curl -L --fail --retry 3 --connect-timeout 10 "$URL" -o "$FILE"
 
     echo "Verifying checksum..."
-    curl -sL --fail "$CHECKSUM_URL" -o "navidrome_checksums.txt"
+    curl -sL --fail --retry 3 --connect-timeout 10 "$CHECKSUM_URL" -o "navidrome_checksums.txt"
     grep "$FILE" "navidrome_checksums.txt" | sha256sum -c - || {
         echo -e "${RED}Error: SHA256 checksum verification failed!${NC}"
         rm "$FILE" "navidrome_checksums.txt"

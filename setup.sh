@@ -7,20 +7,52 @@
 # Exit on error
 set -e
 
+# Colors
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+RED='\033[0;31m'
+NC='\033[0m'
+
 # Configuration
 BRANCH="termux-service-setup-16714057685171292445"
 BASE_URL="https://raw.githubusercontent.com/brad/termux-server/$BRANCH/services"
 
 # Initial dependencies for fetching utils
-pkg update -y
-pkg install curl -y
+echo -e "${YELLOW}Updating package lists...${NC}"
+if ! pkg update -y; then
+    echo -e "${RED}Error: 'pkg update' failed.${NC}"
+    echo -e "${YELLOW}This often happens if a mirror is down. Try running 'termux-change-repo' to select a different mirror.${NC}"
+    exit 1
+fi
+
+if ! command -v curl &> /dev/null; then
+    echo -e "${YELLOW}Installing curl...${NC}"
+    if ! pkg install curl -y; then
+        echo -e "${RED}Error: Failed to install curl.${NC}"
+        echo -e "${YELLOW}Try running 'termux-change-repo' to select a different mirror.${NC}"
+        exit 1
+    fi
+fi
+
+# Detect Local Mode
+USE_LOCAL=false
+if [ -f "./services/utils.sh" ]; then
+    echo -e "${GREEN}Local services directory detected. Using local files.${NC}"
+    USE_LOCAL=true
+    SERVICES_DIR="./services"
+fi
 
 # Fetch and source utilities
-curl -sL --fail "$BASE_URL/utils.sh" -o "/tmp/utils.sh" || {
-    echo "Error: Could not download utils.sh. Check your internet connection or the BRANCH variable."
-    exit 1
-}
-source "/tmp/utils.sh"
+if [ "$USE_LOCAL" = true ]; then
+    source "$SERVICES_DIR/utils.sh"
+else
+    echo -e "${YELLOW}Downloading utilities...${NC}"
+    curl -sL --fail --retry 3 --connect-timeout 10 "$BASE_URL/utils.sh" -o "/tmp/utils.sh" || {
+        echo -e "${RED}Error: Could not download utils.sh. Check your internet connection or the BRANCH variable.${NC}"
+        exit 1
+    }
+    source "/tmp/utils.sh"
+fi
 
 # Initialize summary log
 echo "" > "$SUMMARY_LOG"
@@ -46,7 +78,7 @@ pkg install whiptail coreutils procps -y
 
 # 4. Service selection
 if ! command -v whiptail &> /dev/null; then
-    echo "Error: whiptail could not be installed. Please run 'pkg install whiptail' manually."
+    echo -e "${RED}Error: whiptail could not be installed. Please run 'pkg install whiptail' manually.${NC}"
     exit 1
 fi
 
@@ -68,14 +100,19 @@ fi
 # 5. Process choices
 for choice in $CHOICES; do
     c=$(echo "$choice" | tr -d '"' | tr '[:upper:]' '[:lower:]')
-    echo -e "${YELLOW}Downloading and running setup for $c...${NC}"
 
-    if curl -sL --fail "$BASE_URL/$c.sh" -o "/tmp/$c.sh"; then
-        # We source the script so it can use the variables and functions from utils.sh
-        source "/tmp/$c.sh"
-        rm "/tmp/$c.sh"
+    if [ "$USE_LOCAL" = true ]; then
+        echo -e "${YELLOW}Running local setup for $c...${NC}"
+        source "$SERVICES_DIR/$c.sh"
     else
-        echo -e "${RED}Error: Could not download setup script for $c${NC}"
+        echo -e "${YELLOW}Downloading and running setup for $c...${NC}"
+        if curl -sL --fail --retry 3 --connect-timeout 10 "$BASE_URL/$c.sh" -o "/tmp/$c.sh"; then
+            # We source the script so it can use the variables and functions from utils.sh
+            source "/tmp/$c.sh"
+            rm "/tmp/$c.sh"
+        else
+            echo -e "${RED}Error: Could not download setup script for $c${NC}"
+        fi
     fi
 done
 
@@ -96,5 +133,7 @@ echo -e "3. Long-press on your home screen -> Widgets -> Termux:Widget to add th
 echo -e "${GREEN}====================================================${NC}"
 
 # Cleanup
-rm "/tmp/utils.sh"
-rm "$SUMMARY_LOG"
+if [ "$USE_LOCAL" = false ]; then
+    rm -f "/tmp/utils.sh"
+fi
+rm -f "$SUMMARY_LOG"
