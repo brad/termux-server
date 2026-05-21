@@ -6,7 +6,7 @@
 echo -e "${YELLOW}Setting up Nextcloud...${NC}"
 
 # Install dependencies
-pkg install -y unzip sqlite php lighttpd wget coreutils
+DEBIAN_FRONTEND=noninteractive pkg install -y unzip sqlite php lighttpd wget coreutils lsof
 
 # Download Nextcloud if not already present
 if [ ! -d "$HOME/nextcloud" ]; then
@@ -27,7 +27,7 @@ if [ ! -d "$HOME/nextcloud" ]; then
 
     echo "Extracting Nextcloud..."
     unzip -q "$FILE"
-    rm "$FILE"
+    [ -f "$FILE" ] && rm "$FILE"
 
     # Basic config initialization
     if [ -f "$HOME/nextcloud/config/config.sample.php" ]; then
@@ -35,6 +35,15 @@ if [ ! -d "$HOME/nextcloud" ]; then
         # Allow any host for private network access
         sed -i "s/localhost:8080/*/g" "$HOME/nextcloud/config/config.php"
     fi
+fi
+
+# Ensure runtime directories exist
+mkdir -p "$PREFIX/tmp"
+
+# Verify php-cgi availability
+if [ ! -f "$PREFIX/bin/php-cgi" ]; then
+    echo -e "${RED}Error: php-cgi not found at $PREFIX/bin/php-cgi. Check php-cgi installation.${NC}"
+    return 1 2>/dev/null || exit 1
 fi
 
 # Configure lighttpd
@@ -95,9 +104,26 @@ lighttpd -t -f ~/lighttpd.conf || {
     return 1 2>/dev/null || exit 1
 }
 
+# Check for port conflicts
+if lsof -i :8080 >/dev/null 2>&1; then
+    CONFLICT_PID=$(lsof -t -i :8080)
+    echo -e "${RED}Error: Port 8080 is already in use by PID $CONFLICT_PID.${NC}"
+    echo -e "${YELLOW}Please stop the conflicting process or change the port in ~/lighttpd.conf.${NC}"
+    return 1 2>/dev/null || exit 1
+fi
+
 # Start now
 if ! pgrep -x lighttpd >/dev/null; then
     lighttpd -f ~/lighttpd.conf
+    sleep 1
+    if ! pgrep -x lighttpd >/dev/null; then
+        echo -e "${RED}Error: lighttpd failed to start. Check ~/lighttpd-error.log for details.${NC}"
+        if [ -f "$HOME/lighttpd-error.log" ]; then
+            echo -e "${YELLOW}Last 20 lines of ~/lighttpd-error.log:${NC}"
+            tail -n 20 "$HOME/lighttpd-error.log"
+        fi
+        return 1 2>/dev/null || exit 1
+    fi
 fi
 
 log_summary "${GREEN}Nextcloud setup complete. Web UI at http://[DEVICE_IP]:8080${NC}"
