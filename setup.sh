@@ -14,7 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Configuration
-BRANCH="termux-service-setup-16714057685171292445"
+BRANCH="termux-service-setup-16714057685171292445-7850519604911552579"
 BASE_URL="https://raw.githubusercontent.com/brad/termux-server/$BRANCH/services"
 
 # Initial dependencies for fetching utils
