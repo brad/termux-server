@@ -65,11 +65,22 @@ server.modules = (
     "mod_access",
     "mod_accesslog",
     "mod_fastcgi",
-    "mod_rewrite"
+    "mod_rewrite",
+    "mod_setenv"
+)
+setenv.add-environment = (
+    "PATH" => "/usr/local/bin:/usr/bin:/bin:$PREFIX/bin",
+    "HOME" => "$HOME",
+    "TMPDIR" => "$PREFIX/tmp"
 )
 fastcgi.server = ( ".php" => ((
                      "bin-path" => "$PREFIX/bin/php-cgi",
-                     "socket" => "$PREFIX/tmp/php.socket"
+                     "socket" => "$PREFIX/tmp/php.socket",
+                     "bin-environment" => (
+                         "PHP_FCGI_CHILDREN" => "4",
+                         "PHP_FCGI_MAX_REQUESTS" => "1000"
+                     ),
+                     "check-local" => "disable"
                  )))
 LIGHTEOF
 
@@ -120,3 +131,6 @@ if ! pgrep -x lighttpd >/dev/null; then
 fi
 
 log_summary "${GREEN}Nextcloud setup complete. Web UI at http://[DEVICE_IP]:8080${NC}"
+log_summary "${YELLOW}If you see 'Internal Server Error', check logs with:${NC}"
+log_summary "  cat ~/lighttpd-error.log"
+log_summary "  tail -n 50 ~/nextcloud/data/nextcloud.log"
