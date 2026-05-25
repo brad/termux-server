@@ -26,15 +26,8 @@ if [ ! -d "$HOME/nextcloud" ]; then
     }
 
     echo "Extracting Nextcloud..."
-    unzip -q "$FILE"
+    unzip -q "$FILE" -d "$HOME"
     [ -f "$FILE" ] && rm "$FILE"
-
-    # Basic config initialization
-    if [ -f "$HOME/nextcloud/config/config.sample.php" ]; then
-        cp "$HOME/nextcloud/config/config.sample.php" "$HOME/nextcloud/config/config.php"
-        # Allow any host for private network access
-        sed -i "s/localhost:8080/*/g" "$HOME/nextcloud/config/config.php"
-    fi
 fi
 
 # Ensure runtime directories exist
@@ -85,7 +78,7 @@ mkdir -p ~/.termux/boot
 cat << BOOTEOF > ~/.termux/boot/start-nextcloud
 #!/bin/bash
 termux-wake-lock
-lighttpd -f ~/lighttpd.conf
+lighttpd -D -f ~/lighttpd.conf > /dev/null 2>&1 &
 BOOTEOF
 chmod +x ~/.termux/boot/start-nextcloud
 
@@ -114,7 +107,7 @@ fi
 
 # Start now
 if ! pgrep -x lighttpd >/dev/null; then
-    lighttpd -f ~/lighttpd.conf
+    lighttpd -D -f ~/lighttpd.conf > /dev/null 2>&1 &
     sleep 1
     if ! pgrep -x lighttpd >/dev/null; then
         echo -e "${RED}Error: lighttpd failed to start. Check ~/lighttpd-error.log for details.${NC}"
