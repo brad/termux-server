@@ -30,6 +30,14 @@ if [ ! -d "$HOME/nextcloud" ]; then
     [ -f "$FILE" ] && rm "$FILE"
 fi
 
+# Cleanup potentially broken config from previous runs (e.g. copied from config.sample.php)
+if [ -f "$HOME/nextcloud/config/config.php" ]; then
+    if grep -q "RedisCluster" "$HOME/nextcloud/config/config.php"; then
+        echo "Detected broken config.php (copied from sample). Removing it to allow fresh setup..."
+        rm "$HOME/nextcloud/config/config.php"
+    fi
+fi
+
 # Ensure runtime directories exist
 mkdir -p "$PREFIX/tmp"
 
