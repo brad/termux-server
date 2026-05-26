@@ -94,10 +94,10 @@ fastcgi.server = ( ".php" => ((
                  )))
 
 # Security: Deny access to sensitive directories
-$HTTP["url"] =~ "^/(?:build|tests|config|lib|3rdparty|templates|data|common|autotest)/" {
+\$HTTP["url"] =~ "^/(?:build|tests|config|lib|3rdparty|templates|data|common|autotest)/" {
      url.access-deny = ( "" )
 }
-$HTTP["url"] =~ "^/\.(?!well-known)" {
+\$HTTP["url"] =~ "^/\.(?!well-known)" {
      url.access-deny = ( "" )
 }
 LIGHTEOF
