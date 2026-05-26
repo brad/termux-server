@@ -66,6 +66,7 @@ mimetype.assign = (
     ".gif" => "image/gif",
     ".png" => "image/png",
     ".svg" => "image/svg+xml",
+    ".mjs" => "text/javascript",
     "" => "application/octet-stream"
 )
 server.modules = (
@@ -86,10 +87,19 @@ fastcgi.server = ( ".php" => ((
                      "socket" => "$PREFIX/tmp/php.socket",
                      "bin-environment" => (
                          "PHP_FCGI_CHILDREN" => "4",
-                         "PHP_FCGI_MAX_REQUESTS" => "1000"
+                         "PHP_FCGI_MAX_REQUESTS" => "1000",
+                         "PHP_VALUE" => "memory_limit=512M"
                      ),
                      "check-local" => "disable"
                  )))
+
+# Security: Deny access to sensitive directories
+$HTTP["url"] =~ "^/(?:build|tests|config|lib|3rdparty|templates|data|common|autotest)/" {
+     url.access-deny = ( "" )
+}
+$HTTP["url"] =~ "^/\.(?!well-known)" {
+     url.access-deny = ( "" )
+}
 LIGHTEOF
 
 # Enable boot
