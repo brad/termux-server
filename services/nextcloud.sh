@@ -6,7 +6,7 @@
 echo -e "${YELLOW}Setting up Nextcloud...${NC}"
 
 # Install dependencies
-DEBIAN_FRONTEND=noninteractive pkg install -y unzip sqlite php lighttpd wget coreutils lsof
+DEBIAN_FRONTEND=noninteractive pkg install -y unzip sqlite php php-gd lighttpd wget coreutils lsof
 
 # Download Nextcloud if not already present
 if [ ! -d "$HOME/nextcloud" ]; then
@@ -103,7 +103,7 @@ chmod +x ~/.termux/boot/start-nextcloud
 
 # Shortcut to stop
 mkdir -p ~/.shortcuts
-echo "pkill lighttpd && echo 'Nextcloud Stopped'" > ~/.shortcuts/stop-nextcloud
+echo "pkill lighttpd && pkill php-cgi && echo 'Nextcloud Stopped'" > ~/.shortcuts/stop-nextcloud
 chmod +x ~/.shortcuts/stop-nextcloud
 
 # Shortcut to open Web UI
@@ -126,6 +126,7 @@ fi
 
 # Start now
 if ! pgrep -x lighttpd >/dev/null; then
+    pkill php-cgi || true
     lighttpd -D -f ~/lighttpd.conf > /dev/null 2>&1 &
     sleep 1
     if ! pgrep -x lighttpd >/dev/null; then
