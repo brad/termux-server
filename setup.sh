@@ -14,7 +14,7 @@ RED='\033[0;31m'
 NC='\033[0m'
 
 # Configuration
-BRANCH="termux-service-setup-16714057685171292445-7850519604911552579"
+BRANCH="main"
 BASE_URL="https://raw.githubusercontent.com/brad/termux-server/$BRANCH/services"
 
 # Initial dependencies for fetching utils
@@ -99,7 +99,8 @@ CHOICES=$(whiptail --title "Termux Service Setup" --checklist \
 "Transmission" "BitTorrent Client" ON \
 "Mosquitto" "MQTT Broker" OFF \
 "Navidrome" "Subsonic Music Server" OFF \
-"Nextcloud" "Cloud Storage (PHP/Lighttpd)" OFF 3>&1 1>&2 2>&3)
+"Nextcloud" "Cloud Storage (PHP/Lighttpd)" OFF \
+"Tailscale" "Secure Mesh VPN" OFF 3>&1 1>&2 2>&3)
 
 # Exit if cancelled
 if [ $? -ne 0 ]; then
