@@ -19,6 +19,7 @@ A quick and easy way to set up common services on your Termux device with securi
 - **Mosquitto**: MQTT broker for IoT and automation.
 - **Navidrome**: Modern Subsonic-compatible personal music streamer.
 - **Nextcloud**: Self-hosted productivity platform (File sync, etc.).
+- **Tailscale**: Secure mesh VPN using user-space networking.
 
 ## Prerequisites
 
@@ -32,9 +33,7 @@ For the best experience, please install the following from [F-Droid](https://f-d
 
 Open Termux and copy/paste the following command:
 
-```bash
-curl -sL https://raw.githubusercontent.com/brad/termux-server/termux-service-setup-16714057685171292445/setup.sh | bash
-```
+`curl -sL https://raw.githubusercontent.com/brad/termux-server/main/setup.sh | bash`
 
 ## Post-Installation
 
