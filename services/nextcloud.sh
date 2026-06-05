@@ -97,23 +97,18 @@ fastcgi.server = ( ".php" => ((
 \$HTTP["url"] =~ "^/(?:build|tests|config|lib|3rdparty|templates|data|common|autotest)/" {
      url.access-deny = ( "" )
 }
-\$HTTP["url"] =~ "^/\.(?!well-known)" {
+\$HTTP["url"] =~ "^/\\.(?!well-known)" {
      url.access-deny = ( "" )
 }
 LIGHTEOF
 
-# Enable boot
-mkdir -p ~/.termux/boot
-cat << BOOTEOF > ~/.termux/boot/start-nextcloud
-#!/bin/bash
-termux-wake-lock
-lighttpd -D -f ~/lighttpd.conf > /dev/null 2>&1 &
-BOOTEOF
-chmod +x ~/.termux/boot/start-nextcloud
+# Enable via termux-services
+setup_service "nextcloud" "termux-wake-lock; exec lighttpd -D -f \$HOME/lighttpd.conf 2>&1"
+sv-enable nextcloud
 
 # Shortcut to stop
 mkdir -p ~/.shortcuts
-echo "pkill lighttpd && pkill php-cgi && echo 'Nextcloud Stopped'" > ~/.shortcuts/stop-nextcloud
+echo 'sv down nextcloud && pkill php-cgi && echo "Nextcloud Stopped"' > ~/.shortcuts/stop-nextcloud
 chmod +x ~/.shortcuts/stop-nextcloud
 
 # Shortcut to open Web UI
@@ -125,29 +120,6 @@ lighttpd -t -f ~/lighttpd.conf || {
     echo -e "${RED}Error: lighttpd configuration test failed. Check the output above.${NC}"
     return 1 2>/dev/null || exit 1
 }
-
-# Check for port conflicts
-if lsof -i :8080 >/dev/null 2>&1; then
-    CONFLICT_PID=$(lsof -t -i :8080)
-    echo -e "${RED}Error: Port 8080 is already in use by PID $CONFLICT_PID.${NC}"
-    echo -e "${YELLOW}Please stop the conflicting process or change the port in ~/lighttpd.conf.${NC}"
-    return 1 2>/dev/null || exit 1
-fi
-
-# Start now
-if ! pgrep -x lighttpd >/dev/null; then
-    pkill php-cgi || true
-    lighttpd -D -f ~/lighttpd.conf > /dev/null 2>&1 &
-    sleep 1
-    if ! pgrep -x lighttpd >/dev/null; then
-        echo -e "${RED}Error: lighttpd failed to start. Check ~/lighttpd-error.log for details.${NC}"
-        if [ -f "$HOME/lighttpd-error.log" ]; then
-            echo -e "${YELLOW}Last 20 lines of ~/lighttpd-error.log:${NC}"
-            tail -n 20 "$HOME/lighttpd-error.log"
-        fi
-        return 1 2>/dev/null || exit 1
-    fi
-fi
 
 log_summary "${GREEN}Nextcloud setup complete. Web UI at http://[DEVICE_IP]:8080${NC}"
 log_summary "${YELLOW}If you see 'Internal Server Error', check logs with:${NC}"

@@ -26,23 +26,13 @@ if [ ! -f ~/.config/mosquitto/passwd ]; then
     log_summary "${YELLOW}Mosquitto: No users configured. Run 'mosquitto_passwd -b ~/.config/mosquitto/passwd <username> <password>' to add a user.${NC}"
 fi
 
-# Enable boot
-mkdir -p ~/.termux/boot
-cat << BOOTEOF > ~/.termux/boot/start-mosquitto
-#!/bin/bash
-mosquitto -d -c \$HOME/.config/mosquitto/mosquitto.conf
-BOOTEOF
-chmod +x ~/.termux/boot/start-mosquitto
+# Enable via termux-services
+setup_service "mosquitto" "exec mosquitto -c \$HOME/.config/mosquitto/mosquitto.conf 2>&1"
+sv-enable mosquitto
 
 # Shortcut to stop
 mkdir -p ~/.shortcuts
-echo "pkill mosquitto && echo 'Mosquitto Stopped'" > ~/.shortcuts/stop-mosquitto
+echo 'sv down mosquitto && echo "Mosquitto Stopped"' > ~/.shortcuts/stop-mosquitto
 chmod +x ~/.shortcuts/stop-mosquitto
-
-# Start now
-if pgrep -x mosquitto >/dev/null; then
-    pkill mosquitto
-fi
-mosquitto -d -c ~/.config/mosquitto/mosquitto.conf
 
 log_summary "${GREEN}Mosquitto setup complete. Listener on 0.0.0.0:1883 (Auth Required).${NC}"

@@ -25,3 +25,25 @@ fi
 log_summary() {
     echo -e "$1" >> "$SUMMARY_LOG"
 }
+
+# Function to setup a runit service
+setup_service() {
+    local service_name=$1
+    local run_command=$2
+    local service_dir="$PREFIX/var/service/$service_name"
+
+    echo -e "${YELLOW}Configuring runit service: $service_name...${NC}"
+
+    # Create service and log directories
+    mkdir -p "$service_dir/log"
+
+    # Create run script
+    cat << RUNEOF > "$service_dir/run"
+#!/bin/bash
+$run_command
+RUNEOF
+    chmod +x "$service_dir/run"
+
+    # Link logger
+    ln -sf "$PREFIX/share/termux-services/svlogger" "$service_dir/log/run"
+}

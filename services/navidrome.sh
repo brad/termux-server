@@ -38,27 +38,17 @@ fi
 # Add ~/bin to path if not already there (for the current session)
 export PATH="$HOME/bin:$PATH"
 
-# Enable boot
-mkdir -p ~/.termux/boot
-cat << BOOTEOF > ~/.termux/boot/start-navidrome
-#!/bin/bash
-export PATH="\$HOME/bin:\$PATH"
-cd ~ && navidrome --addr 0.0.0.0 > /dev/null 2>&1 &
-BOOTEOF
-chmod +x ~/.termux/boot/start-navidrome
+# Enable via termux-services
+setup_service "navidrome" "export PATH=\"\$HOME/bin:\$PATH\"; cd \$HOME && exec navidrome --addr 0.0.0.0 2>&1"
+sv-enable navidrome
 
 # Shortcut to stop
 mkdir -p ~/.shortcuts
-echo "pkill navidrome && echo 'Navidrome Stopped'" > ~/.shortcuts/stop-navidrome
+echo 'sv down navidrome && echo "Navidrome Stopped"' > ~/.shortcuts/stop-navidrome
 chmod +x ~/.shortcuts/stop-navidrome
 
 # Shortcut to open Web UI
 echo "termux-open-url http://127.0.0.1:4533" > ~/.shortcuts/open-navidrome
 chmod +x ~/.shortcuts/open-navidrome
-
-# Start now
-if ! pgrep -x navidrome >/dev/null; then
-    ~/bin/navidrome --addr 0.0.0.0 > /dev/null 2>&1 &
-fi
 
 log_summary "${GREEN}Navidrome setup complete. Web UI at http://[DEVICE_IP]:4533${NC}"

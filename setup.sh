@@ -84,7 +84,22 @@ pkg upgrade -y -o Dpkg::Options::="--force-confdef" -o Dpkg::Options::="--force-
 
 # 3. Install whiptail and other basics if not present
 echo -e "${YELLOW}Installing dependencies...${NC}"
-pkg install whiptail coreutils procps -y
+pkg install whiptail coreutils procps termux-services -y
+
+# Configure termux-services boot
+mkdir -p ~/.termux/boot
+cat << BOOTEOF > ~/.termux/boot/00-start-services
+#!/bin/bash
+runsvdir-start
+BOOTEOF
+chmod +x ~/.termux/boot/00-start-services
+
+# Ensure runsvdir is running for the current session
+if ! pgrep -x "runsvdir" > /dev/null; then
+    echo -e "${YELLOW}Starting service daemon...${NC}"
+    runsvdir-start &
+    sleep 2
+fi
 
 # 4. Service selection
 if ! command -v whiptail &> /dev/null; then
