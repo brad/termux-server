@@ -6,7 +6,7 @@
 echo -e "${YELLOW}Setting up Nextcloud...${NC}"
 
 # Install dependencies
-DEBIAN_FRONTEND=noninteractive pkg install -y unzip sqlite php lighttpd wget coreutils lsof
+DEBIAN_FRONTEND=noninteractive pkg install -y unzip sqlite php php-gd lighttpd wget coreutils lsof
 
 # Download Nextcloud if not already present
 if [ ! -d "$HOME/nextcloud" ]; then
@@ -26,14 +26,15 @@ if [ ! -d "$HOME/nextcloud" ]; then
     }
 
     echo "Extracting Nextcloud..."
-    unzip -q "$FILE"
+    unzip -q "$FILE" -d "$HOME"
     [ -f "$FILE" ] && rm "$FILE"
+fi
 
-    # Basic config initialization
-    if [ -f "$HOME/nextcloud/config/config.sample.php" ]; then
-        cp "$HOME/nextcloud/config/config.sample.php" "$HOME/nextcloud/config/config.php"
-        # Allow any host for private network access
-        sed -i "s/localhost:8080/*/g" "$HOME/nextcloud/config/config.php"
+# Cleanup potentially broken config from previous runs (e.g. copied from config.sample.php)
+if [ -f "$HOME/nextcloud/config/config.php" ]; then
+    if grep -q "RedisCluster" "$HOME/nextcloud/config/config.php"; then
+        echo "Detected broken config.php (copied from sample). Removing it to allow fresh setup..."
+        rm "$HOME/nextcloud/config/config.php"
     fi
 fi
 
@@ -65,6 +66,7 @@ mimetype.assign = (
     ".gif" => "image/gif",
     ".png" => "image/png",
     ".svg" => "image/svg+xml",
+    ".mjs" => "text/javascript",
     "" => "application/octet-stream"
 )
 server.modules = (
@@ -72,12 +74,32 @@ server.modules = (
     "mod_access",
     "mod_accesslog",
     "mod_fastcgi",
-    "mod_rewrite"
+    "mod_rewrite",
+    "mod_setenv"
+)
+setenv.add-environment = (
+    "PATH" => "/usr/local/bin:/usr/bin:/bin:$PREFIX/bin",
+    "HOME" => "$HOME",
+    "TMPDIR" => "$PREFIX/tmp"
 )
 fastcgi.server = ( ".php" => ((
                      "bin-path" => "$PREFIX/bin/php-cgi",
-                     "socket" => "$PREFIX/tmp/php.socket"
+                     "socket" => "$PREFIX/tmp/php.socket",
+                     "bin-environment" => (
+                         "PHP_FCGI_CHILDREN" => "4",
+                         "PHP_FCGI_MAX_REQUESTS" => "1000",
+                         "PHP_VALUE" => "memory_limit=512M"
+                     ),
+                     "check-local" => "disable"
                  )))
+
+# Security: Deny access to sensitive directories
+\$HTTP["url"] =~ "^/(?:build|tests|config|lib|3rdparty|templates|data|common|autotest)/" {
+     url.access-deny = ( "" )
+}
+\$HTTP["url"] =~ "^/\.(?!well-known)" {
+     url.access-deny = ( "" )
+}
 LIGHTEOF
 
 # Enable boot
@@ -85,13 +107,13 @@ mkdir -p ~/.termux/boot
 cat << BOOTEOF > ~/.termux/boot/start-nextcloud
 #!/bin/bash
 termux-wake-lock
-lighttpd -f ~/lighttpd.conf
+lighttpd -D -f ~/lighttpd.conf > /dev/null 2>&1 &
 BOOTEOF
 chmod +x ~/.termux/boot/start-nextcloud
 
 # Shortcut to stop
 mkdir -p ~/.shortcuts
-echo "pkill lighttpd && echo 'Nextcloud Stopped'" > ~/.shortcuts/stop-nextcloud
+echo "pkill lighttpd && pkill php-cgi && echo 'Nextcloud Stopped'" > ~/.shortcuts/stop-nextcloud
 chmod +x ~/.shortcuts/stop-nextcloud
 
 # Shortcut to open Web UI
@@ -114,7 +136,8 @@ fi
 
 # Start now
 if ! pgrep -x lighttpd >/dev/null; then
-    lighttpd -f ~/lighttpd.conf
+    pkill php-cgi || true
+    lighttpd -D -f ~/lighttpd.conf > /dev/null 2>&1 &
     sleep 1
     if ! pgrep -x lighttpd >/dev/null; then
         echo -e "${RED}Error: lighttpd failed to start. Check ~/lighttpd-error.log for details.${NC}"
@@ -127,3 +150,6 @@ if ! pgrep -x lighttpd >/dev/null; then
 fi
 
 log_summary "${GREEN}Nextcloud setup complete. Web UI at http://[DEVICE_IP]:8080${NC}"
+log_summary "${YELLOW}If you see 'Internal Server Error', check logs with:${NC}"
+log_summary "  cat ~/lighttpd-error.log"
+log_summary "  tail -n 50 ~/nextcloud/data/nextcloud.log"
