@@ -5,7 +5,8 @@ A quick and easy way to set up common services on your Termux device with securi
 ## Features
 
 - **Interactive Selection**: Choose which services to install using a simple menu.
-- **Boot Support**: Automatically configures services to start on device boot (requires Termux:Boot).
+- **Service Management**: Uses `termux-services` (runit) for robust process management and automatic restarts.
+- **Boot Support**: Automatically starts the service daemon on device boot (requires Termux:Boot).
 - **One-Click Controls**: Adds home screen shortcuts to stop services and open Web UIs (requires Termux:Widget).
 - **Secure & Idempotent**: Skips already configured services and ensures basic security.
 - **Storage Integration**: Connects Termux to your Android shared storage.
@@ -38,16 +39,24 @@ Open Termux and copy/paste the following command:
 ## Post-Installation
 
 ### 1. Enable Boot Start
-If you installed **Termux:Boot**, open the app once after installation. This allows Android to trigger the boot scripts located in `~/.termux/boot/`.
+If you installed **Termux:Boot**, open the app once after installation. This allows Android to trigger the boot scripts located in `~/.termux/boot/`. The setup script configures a boot script to start the `termux-services` daemon.
 
-### 2. Use Shortcuts
+### 2. Manage Services
+Services are managed using the `sv` command provided by `termux-services`:
+- **Start/Restart a service**: `sv up <service>`
+- **Stop a service**: `sv down <service>`
+- **Check status**: `sv status <service>`
+- **Enable at startup**: `sv-enable <service>`
+- **Disable at startup**: `sv-disable <service>`
+
+### 3. Use Shortcuts
 If you installed **Termux:Widget**:
 1. Long-press on an empty space on your Android home screen.
 2. Select **Widgets**.
 3. Find **Termux:Widget** and drag it to your home screen.
 4. You will now see a list of shortcuts to stop services or open their Web UIs.
 
-### 3. Permissions
+### 4. Permissions
 If shortcuts to open Web UIs (e.g., Syncthing) don't work, ensure Termux has the **"Display over other apps"** permission enabled in Android Settings.
 
 ## Security
